@@ -1,0 +1,4 @@
+start.bat で起動
+http://localhost:7250/discordchat?chat=test
+とかで投稿する
+投稿先の設定、ユーザトークン、サーバのポートはGUIで

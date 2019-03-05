@@ -1,0 +1,1 @@
+electron-packager D:\Users\atuwa\node\disclient disclient --platform=darwin,win32 --arch=x64 --version=4.0.4

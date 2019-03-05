@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="index.css">
+        <title>DiscordWidgetBeta</title>
+    </head>
+    <script>
+        function setMemo(){
+            var input=document.getElementById("input_memo");
+            var memo=document.getElementById("memo");
+            memo.innerHTML=input.value;
+        }
+    </script>
+    <body>
+        <center>
+            <h1>Discord Widget Beta</h1>
+            <h2 id="atuwaBouyomi_text">atuwaBouyomi</h2>
+            <input type="text" id="input_atuwaBouyomi" value="localhost">
+            <input type="number" id="input_atuwaBouyomiP" value="5003"><br>
+            <h2 id="port_text">Port</h2>
+            <input type="number" id="input_port" value="7100">
+            <h2 id="memo"></h2>
+            <input type="text" id="input_memo">
+            <input type="button" id="setMemo" onclick=setMemo(); value="メモする(ファイルに保存されません)"></input>
+            <h2 id="client_status_text">Token</h2>
+            <p><textarea id="input_area"></textarea></p>
+            <input type="button" id="submit" value="Login!"></input>
+            <script src="index.js"></script>
+        </center>
+    </body>
+</html>
