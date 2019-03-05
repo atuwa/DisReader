@@ -12,53 +12,10 @@ if(argv.length>2)document.getElementById("input_atuwaBouyomiP").value=argv[2];
 if(argv.length>3)document.getElementById("input_area").value=argv[3];
 if(argv.length>4)document.getElementById("input").innerHTML=argv[4];
 */
-var express = require('express');
-var server= express();
 url = require('url');
 const net = require('net');
 
-server.get('/discordchat', function(req, res){
-	if(req.query.channel){
-		var ta=document.getElementById("channel_select");
-		ta.value=req.query.channel;
-	}
-	if (req.query.chat) {
-		var chat = req.query.chat;
-		console.log(chat);
-    var guilds = client.guilds;
-    var selected_guild = document.getElementById("server_select").value;
-    var selected_channel = document.getElementById("channel_select").value;
-    guilds.map(guild => {
-        if(guild.id === selected_guild){
-            guild.channels.map(channel => {
-                if(channel.id === selected_channel){
-                    console.log(channel.name);
-                    console.log(chat);
-                    channel.send(chat);
-                };
-            });
-        };
-    });
-		res.send("成功="+chat);
-	}else res.send("失敗");
-});
-
 function main() {
-
-var input_port = document.getElementById("input_port");
-var port=parseInt(input_port.value, 10);
-server.listen(port, function() {
-    //console.log('Listening on port '+port);
-});
-input_port.parentNode.removeChild(input_port);
-var port_text=document.getElementById("port_text");
-port_text.parentNode.removeChild(port_text);
-
-var input_memo=document.getElementById("input_memo");
-input_memo.parentNode.removeChild(input_memo);
-var setMemo=document.getElementById("setMemo");
-setMemo.parentNode.removeChild(setMemo);
-
     var input_area = document.getElementById("input_area");
 
     client.on("ready", () => {
@@ -106,25 +63,36 @@ setMemo.parentNode.removeChild(setMemo);
         //console.log("<atuwaBouyomi> " + atuwaBouyomi);
         const bouyomiServer = {};
         bouyomiServer.host = atuwaBouyomi;
-        bouyomiServer.port = parseInt(atuwaBouyomiP, 10);;
+        bouyomiServer.port = parseInt(atuwaBouyomiP, 10);
         const options = bouyomiServer;
         //console.log("setData");
         const bouyomiClient = net.createConnection(options, () => {
             //console.log("SendStart");
-        let messageBuffer = Buffer.from(message);
-        const uid=""+msg.id;
-        const UIDBuffer = Buffer.from(uid);//ここから拡張分
-        const buffer = Buffer.alloc(15 + messageBuffer.length+UIDBuffer.length+4);
+        const messageBuffer = Buffer.from(message);
+        const UIDBuffer = Buffer.from(""+msg.id);//拡張分
+        const username = msg.author.username; // 対象者の名前
+        const nickname = (function() { // 対象者のニックネーム。未設定はnull
+          if (msg.member == null || msg.member.nickname == null) return username;
+          return msg.member.nickname;
+        })();
+        const NickBuffer = Buffer.from(""+nickname);//拡張分
+        const len=15 + messageBuffer.length+UIDBuffer.length+4+NickBuffer.length+4;
+        const buffer = Buffer.alloc(len);
         buffer.writeUInt16LE(0xF001, 0);
         buffer.writeInt16LE(-1, 2); // 速度 speed
         buffer.writeInt16LE(-1, 4); // 音程 tone
         buffer.writeInt16LE(-1, 6); // 音量 volume
         buffer.writeInt16LE(0, 8); // 声質 voice
-        buffer.writeUInt8(0x00, 10);
+        buffer.writeUInt8(0x00, 10);//UTF-8
         buffer.writeUInt32LE(messageBuffer.length, 11);
         messageBuffer.copy(buffer, 15, 0, messageBuffer.length);
-        buffer.writeUInt32LE(UIDBuffer.length, 15+messageBuffer.length);
+
+        buffer.writeUInt32LE(UIDBuffer.length, 15+messageBuffer.length);//ユーザIDをテキストとして
         UIDBuffer.copy(buffer, messageBuffer.length+19, 0, UIDBuffer.length);
+
+        buffer.writeUInt32LE(NickBuffer.length, 15+messageBuffer.length+UIDBuffer.length+4);//ニックネームをテキストとして
+        NickBuffer.copy(buffer, messageBuffer.length+15+UIDBuffer.length+4+4, 0, NickBuffer.length);
+
         bouyomiClient.write(buffer);
         //console.log("<Send> " + buffer);
         });
