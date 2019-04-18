@@ -1,7 +1,6 @@
 const Discord = require('discord.js');
 const client = new Discord.Client();
 
-console.log("test!")
 document.getElementById("submit").addEventListener("click", main, false);
 /*
 var remote = require('remote');
@@ -14,9 +13,89 @@ if(argv.length>4)document.getElementById("input").innerHTML=argv[4];
 */
 url = require('url');
 const net = require('net');
+function isExistFile(file) {
+    let fs = require('fs');
+    try {
+      fs.statSync(file);
+      return true
+    } catch(err) {
+      if(err.code === 'ENOENT') return false
+    }
+  }
+  // 現在の時刻を取得
+  function whatTimeIsIt() {
+    const time = new Date();
+    const year = time.getFullYear();
+    const month = zeroPadding(time.getMonth() + 1);
+    const day = zeroPadding(time.getDate());
+    const hours = zeroPadding(time.getHours());
+    const minutes = zeroPadding(time.getMinutes());
+    const seconds = zeroPadding(time.getSeconds());
+    const text = (() => {
+      return `${year}-${month}-${day}_${hours}.${minutes}.${seconds}`;
+    })();
+    return text;
+  }
+  // ゼロパディング
+  function zeroPadding(num) {
+    const str = String(num);
+    const txt = (() => {
+      if (str.length == 1) return `0${str}`;
+      return str;
+    })();
+    return txt;
+  }
+function download(data){
+    var input_autoDL= document.getElementById("input_autoDL");
+    var bp=input_autoDL.value;
+    if(!bp)return;
+    console.log("DL path="+data);
+	try {
+  let request = require('request');
+  request(data, {
+    encoding: 'binary'
+  }, (error, response, body) => {
+    if (!error) {
+      let fs = require('fs');
+      let path = require('path');
+      let fn=path.basename(data);
+      if(fn=="unknown.png")fn=whatTimeIsIt()+".png";
+      var pa=bp+fn;
+      var num=0;
+      while(isExistFile(pa)){
+        pa=bp+num+"_"+fn;
+        num++;
+      }
+      fs.writeFile(pa, body, 'binary', (err) => {
+        console.log(err);
+      });
+      console.log("LocalPath="+pa);
+    }else{
+        console.log(error);
+    }
+  });
+	}catch(error) {
+        console.log(error);
+	}
+}
+var input_autoDL= document.getElementById("input_autoDL");
+input_autoDL.value=window.localStorage.getItem('input_autoDL');
+var input_area = document.getElementById("input_area");
+input_area.value=window.localStorage.getItem('input_areaTOKEN');
+var input_atuwaBouyomi= document.getElementById("input_atuwaBouyomi");
+input_atuwaBouyomi.value=window.localStorage.getItem('input_atuwaBouyomi')||"localhost";
+var input_atuwaBouyomiP= document.getElementById("input_atuwaBouyomiP");
+input_atuwaBouyomiP.value=window.localStorage.getItem('input_atuwaBouyomiP')||"5003";
 
 function main() {
+    var input_autoDL= document.getElementById("input_autoDL");
+    window.localStorage.setItem('input_autoDL',input_autoDL.value);
     var input_area = document.getElementById("input_area");
+    window.localStorage.setItem('input_areaTOKEN',input_area.value);
+    var input_atuwaBouyomi = document.getElementById("input_atuwaBouyomi");
+    window.localStorage.setItem('input_atuwaBouyomi',input_atuwaBouyomi.value);
+    var input_atuwaBouyomiP = document.getElementById("input_atuwaBouyomiP");
+    window.localStorage.setItem('input_atuwaBouyomiP',input_atuwaBouyomiP.value);
 
     client.on("ready", () => {
         boot_client();
@@ -24,16 +103,21 @@ function main() {
     });
     client.login(input_area.value);
     client.on('message', msg => {//メッセージ受け取り
-        var data=msg.content;
+        var data=msg.content.replace(/<@!?([0-9]*?)>/g, '');
         //https://github.com/micelle/dc_DiSpeak からCopyright (c) 2017 micelle
     let message = data.replace(/\s+/g, ' ').trim();
     const attachmentsSize = msg.attachments.size;
     //console.log("<Discord> files=" + attachmentsSize); 
+        var selected_guild = document.getElementById("server_select").value;
+        var selected_channel = document.getElementById("channel_select").value;
+        if(msg.channel.id!=selected_channel)return;
+        if(msg.channel.guild.id!=selected_guild)return;//対象外の時この下は実行されない
   if (attachmentsSize > 0) {
     const filenameAry = msg.attachments.map(function(val, key) {
+        download(val.url);
       return val.filename;
     });
-    const filenameList = filenameAry.join(', ');
+    const filenameList = filenameAry.join(' file://');
     message+="file://" + filenameList;
   }
   // 絵文字の処理
@@ -54,22 +138,20 @@ function main() {
     var atuwaBouyomi = document.getElementById("input_atuwaBouyomi").value;
     var atuwaBouyomiP = document.getElementById("input_atuwaBouyomiP").value;
     if(atuwaBouyomi){
-        var selected_guild = document.getElementById("server_select").value;
-        var selected_channel = document.getElementById("channel_select").value;
-        if(msg.channel.id!=selected_channel)return;
-        if(msg.channel.guild.id!=selected_guild)return;
         console.log('[Discord] channels', msg.channel.id+"/"+selected_channel);
         console.log('[Discord] channel', msg.channel.guild.id+"/"+selected_guild);
         //console.log("<atuwaBouyomi> " + atuwaBouyomi);
+
         const bouyomiServer = {};
         bouyomiServer.host = atuwaBouyomi;
         bouyomiServer.port = parseInt(atuwaBouyomiP, 10);
         const options = bouyomiServer;
         //console.log("setData");
+        console.log(msg.author.username+'UID='+msg.author.id);
         const bouyomiClient = net.createConnection(options, () => {
             //console.log("SendStart");
         const messageBuffer = Buffer.from(message);
-        const UIDBuffer = Buffer.from(""+msg.id);//拡張分
+        const UIDBuffer = Buffer.from(""+msg.author.id);//拡張分
         const username = msg.author.username; // 対象者の名前
         const nickname = (function() { // 対象者のニックネーム。未設定はnull
           if (msg.member == null || msg.member.nickname == null) return username;

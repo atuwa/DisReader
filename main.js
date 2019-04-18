@@ -1,5 +1,5 @@
 ﻿"use strct";
-console.log('Listening on port 7100');
+
 // Electronのモジュール
 const electron = require("electron");
 
@@ -23,7 +23,11 @@ app.on("window-all-closed", () => {
 // Electronの初期化完了後に実行
 app.on("ready", () => {
   //ウィンドウサイズを設定する
-  mainWindow = new BrowserWindow({width: 400, height: 450, useContentSize: true});
+  mainWindow = new BrowserWindow({
+    width: 400,
+    height: 450,
+    icon: __dirname + '/icon.png',
+    useContentSize: true});
   //使用するhtmlファイルを指定する
   mainWindow.loadURL(`file://${__dirname}/index.html`);
 
@@ -32,4 +36,3 @@ app.on("ready", () => {
     mainWindow = null;
   });
 });
-
